@@ -146,10 +146,11 @@ function bind(){
   Promise.all(state.fotos.map(function(f){return toDataUrl(f.blob)})).then(function(urls){
    var out={geraet:state.geraet,ergebnis:state.erg,schritt:state.schritt,text:state.text,gespeichert:state.zeit,fotos:urls};
    var file=new File([JSON.stringify(out)],"ergebnis-"+(state.geraet||"geraet")+".json",{type:"application/json"});
-   if(navigator.canShare&&navigator.canShare({files:[file]})){
+   var handy=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+   if(handy&&navigator.canShare&&navigator.canShare({files:[file]})){
     navigator.share({files:[file],title:"Testergebnis"}).then(function(){$("msg").textContent="Geteilt."}).catch(function(){$("msg").textContent="Teilen abgebrochen."});
    }else{
-    try{var a=document.createElement("a");a.href=URL.createObjectURL(file);a.download=file.name;document.body.appendChild(a);a.click();a.remove();$("msg").textContent="Datei heruntergeladen ("+fmt(file.size)+"). In der Artifact-Ansicht kann das gesperrt sein."}
+    try{var a=document.createElement("a");a.href=URL.createObjectURL(file);a.download=file.name;document.body.appendChild(a);a.click();a.remove();$("msg").textContent="Datei heruntergeladen ("+fmt(file.size)+")."}
     catch(e){$("msg").textContent="Download nicht möglich."}
    }});};
 }
