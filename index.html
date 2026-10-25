@@ -1,0 +1,163 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex">
+<title>Speichertest Testliste</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: eine schmale Spalte, Testkarte oben, Speicherstatus unten. */
+:root{--bg:#f6f7f5;--fg:#1d2420;--mut:#5f6b64;--card:#fff;--line:#d9dfdb;--acc:#1f7a4d;--bad:#b3261e;--warn:#9a6700;--accfg:#fff;
+--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--mono:ui-monospace,Consolas,Menlo,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121815;--fg:#e6ece8;--mut:#9aa7a0;--card:#1b231f;--line:#2e3a34;--acc:#4cc38a;--bad:#ff8a80;--warn:#e0b040;--accfg:#0d1511;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121815;--fg:#e6ece8;--mut:#9aa7a0;--card:#1b231f;--line:#2e3a34;--acc:#4cc38a;--bad:#ff8a80;--warn:#e0b040;--accfg:#0d1511;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+main{max-width:640px;margin:0 auto;display:grid;gap:16px}
+h1{font-size:1.25rem;margin:0;text-wrap:balance}
+p{margin:0;line-height:1.5}
+.mut{color:var(--mut);font-size:.875rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;display:grid;gap:12px;min-width:0}
+h2{font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin:0;font-weight:600}
+label{font-size:.875rem}
+select,textarea,button,input[type=file]{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;max-width:100%}
+textarea{width:100%;box-sizing:border-box;min-height:84px;resize:vertical}
+button{cursor:pointer}
+button.pri{background:var(--acc);color:var(--accfg);border-color:var(--acc);font-weight:600}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.opt{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.thumbs{display:flex;gap:8px;flex-wrap:wrap}
+.thumbs div{position:relative}
+.thumbs img{width:84px;height:84px;object-fit:cover;border-radius:8px;border:1px solid var(--line);display:block}
+.thumbs button{position:absolute;top:2px;right:2px;padding:0 7px;line-height:22px;border-radius:50%}
+dl{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;margin:0;font-size:.875rem}
+dt{color:var(--mut)} dd{margin:0;font-family:var(--mono);overflow-wrap:anywhere}
+.msg{font-size:.875rem;min-height:1.2em}
+</style>
+
+<main>
+<div>
+<h1>Speichertest Testliste</h1>
+<p class="mut">Wegwerf-Prototyp. Prüft nur, ob Haken, Text und Fotos nach Schließen und Wiederöffnen des Browsers noch da sind.</p>
+</div>
+
+<section class="card">
+<h2>Gerät</h2>
+<select id="geraet" aria-label="Gerät">
+<option value="">Bitte wählen</option>
+<option>Desktop</option><option>Android</option><option>iOS</option>
+</select>
+</section>
+
+<section class="card">
+<h2>Aufgabe · Übungen</h2>
+<p><b>Übung anlegen</b></p>
+<p class="mut">Alle vier Schritte mobil durchgehen, Fokus im Feld prüfen, Pop-up öffnen und schließen, Abbrechen testen.</p>
+<div class="row" role="radiogroup" aria-label="Ergebnis">
+<label class="opt"><input type="radio" name="erg" value="ok"> Klappt</label>
+<label class="opt"><input type="radio" name="erg" value="mittel"> Nicht optimal</label>
+<label class="opt"><input type="radio" name="erg" value="fehler"> Klappt nicht</label>
+</div>
+<label for="schritt">Wo?</label>
+<select id="schritt"><option value="">Schritt wählen</option><option>1 Name &amp; Ziel</option><option>2 Kategorie</option><option>3 Aufbau</option><option>4 Zusammenfassung</option><option>Pop-up</option><option>Abbrechen</option></select>
+<label for="text">Was ist das Problem?</label>
+<textarea id="text" placeholder="Kurz beschreiben"></textarea>
+<label for="foto">Screenshots</label>
+<input id="foto" type="file" accept="image/*" multiple>
+<div class="thumbs" id="thumbs"></div>
+</section>
+
+<section class="card">
+<h2>Ergebnis sichern</h2>
+<div class="row">
+<button class="pri" id="export">Ergebnis speichern / teilen</button>
+</div>
+<p class="msg" id="msg" role="status"></p>
+</section>
+
+<section class="card">
+<h2>Speicherstatus</h2>
+<dl>
+<dt>Zuletzt gespeichert</dt><dd id="st-zeit">–</dd>
+<dt>Dauerhaft zugesagt</dt><dd id="st-pers">–</dd>
+<dt>Belegt</dt><dd id="st-use">–</dd>
+<dt>Fotos</dt><dd id="st-fotos">0</dd>
+<dt>Geöffnet</dt><dd id="st-open">–</dd>
+</dl>
+<button id="pers">Dauerhaften Speicher anfragen</button>
+</section>
+</main>
+
+<script>
+(function(){
+var DB="speichertest",S="kv",db=null,mem={};
+var $=function(i){return document.getElementById(i)};
+function open(){return new Promise(function(res,rej){
+ var r=indexedDB.open(DB,1);
+ r.onupgradeneeded=function(){r.result.createObjectStore(S)};
+ r.onsuccess=function(){res(r.result)};r.onerror=function(){rej(r.error)};});}
+function get(k){return new Promise(function(res){
+ if(!db)return res(mem[k]);
+ var q=db.transaction(S).objectStore(S).get(k);q.onsuccess=function(){res(q.result)};q.onerror=function(){res(undefined)};});}
+function put(k,v){mem[k]=v;return new Promise(function(res){
+ if(!db)return res();
+ var t=db.transaction(S,"readwrite");t.objectStore(S).put(v,k);t.oncomplete=res;t.onerror=res;});}
+var state={geraet:"",erg:"",schritt:"",text:"",fotos:[],zeit:null};
+function save(){state.zeit=new Date().toISOString();return put("state",state).then(status);}
+function fmt(n){return n>1048576?(n/1048576).toFixed(1)+" MB":Math.round(n/1024)+" KB";}
+function status(){
+ $("st-zeit").textContent=state.zeit?new Date(state.zeit).toLocaleString("de-DE"):"–";
+ $("st-fotos").textContent=state.fotos.length;
+ if(navigator.storage&&navigator.storage.persisted)navigator.storage.persisted().then(function(p){$("st-pers").textContent=p?"ja":"nein"});
+ else $("st-pers").textContent="nicht unterstützt";
+ if(navigator.storage&&navigator.storage.estimate)navigator.storage.estimate().then(function(e){$("st-use").textContent=fmt(e.usage||0)});
+}
+function render(){
+ $("geraet").value=state.geraet;$("schritt").value=state.schritt;$("text").value=state.text;
+ document.querySelectorAll("input[name=erg]").forEach(function(r){r.checked=r.value===state.erg});
+ var th=$("thumbs");th.textContent="";
+ state.fotos.forEach(function(f,i){
+  var d=document.createElement("div"),im=document.createElement("img"),b=document.createElement("button");
+  im.src=URL.createObjectURL(f.blob);im.alt="Screenshot "+(i+1);
+  b.textContent="×";b.setAttribute("aria-label","Foto entfernen");
+  b.onclick=function(){state.fotos.splice(i,1);save();render();};
+  d.appendChild(im);d.appendChild(b);th.appendChild(d);});
+ status();
+}
+function toDataUrl(blob){return new Promise(function(res){var r=new FileReader();r.onload=function(){res(r.result)};r.readAsDataURL(blob);});}
+function shrink(file){return new Promise(function(res){
+ var im=new Image(),u=URL.createObjectURL(file);
+ im.onload=function(){
+  var m=1400,s=Math.min(1,m/Math.max(im.width,im.height)),c=document.createElement("canvas");
+  c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);
+  c.getContext("2d").drawImage(im,0,0,c.width,c.height);
+  c.toBlob(function(b){URL.revokeObjectURL(u);res(b||file)},"image/jpeg",.8);};
+ im.onerror=function(){res(file)};im.src=u;});}
+function bind(){
+ $("geraet").onchange=function(){state.geraet=this.value;save()};
+ $("schritt").onchange=function(){state.schritt=this.value;save()};
+ $("text").oninput=function(){state.text=this.value;save()};
+ document.querySelectorAll("input[name=erg]").forEach(function(r){r.onchange=function(){state.erg=r.value;save()}});
+ $("foto").onchange=function(){
+  var files=Array.prototype.slice.call(this.files);this.value="";
+  Promise.all(files.map(shrink)).then(function(bl){
+   bl.forEach(function(b){state.fotos.push({blob:b,name:"foto-"+Date.now()+".jpg"})});
+   save().then(render);});};
+ $("pers").onclick=function(){
+  if(!(navigator.storage&&navigator.storage.persist)){$("msg").textContent="Dieser Browser kennt die Anfrage nicht.";return}
+  navigator.storage.persist().then(function(ok){$("msg").textContent=ok?"Dauerhafter Speicher zugesagt.":"Browser hat abgelehnt.";status();});};
+ $("export").onclick=function(){
+  Promise.all(state.fotos.map(function(f){return toDataUrl(f.blob)})).then(function(urls){
+   var out={geraet:state.geraet,ergebnis:state.erg,schritt:state.schritt,text:state.text,gespeichert:state.zeit,fotos:urls};
+   var file=new File([JSON.stringify(out)],"ergebnis-"+(state.geraet||"geraet")+".json",{type:"application/json"});
+   if(navigator.canShare&&navigator.canShare({files:[file]})){
+    navigator.share({files:[file],title:"Testergebnis"}).then(function(){$("msg").textContent="Geteilt."}).catch(function(){$("msg").textContent="Teilen abgebrochen."});
+   }else{
+    try{var a=document.createElement("a");a.href=URL.createObjectURL(file);a.download=file.name;document.body.appendChild(a);a.click();a.remove();$("msg").textContent="Datei heruntergeladen ("+fmt(file.size)+"). In der Artifact-Ansicht kann das gesperrt sein."}
+    catch(e){$("msg").textContent="Download nicht möglich."}
+   }});};
+}
+$("st-open").textContent=new Date().toLocaleString("de-DE");
+bind();
+open().catch(function(){return null}).then(function(d){db=d;
+ if(!db)$("msg").textContent="Kein dauerhafter Speicher verfügbar. Es wird nur im Arbeitsspeicher gehalten.";
+ return get("state")}).then(function(s){if(s)state=s;render();});
+})();
+</script>
+</html>
